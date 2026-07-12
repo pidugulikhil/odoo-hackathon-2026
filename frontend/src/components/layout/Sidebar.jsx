@@ -8,20 +8,20 @@ import toast from 'react-hot-toast';
 
 const navItems = [
   { section: 'OVERVIEW', items: [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
   ]},
   { section: 'FLEET', items: [
-    { to: '/vehicles', label: 'Vehicles', icon: Truck },
-    { to: '/drivers', label: 'Drivers', icon: Users },
+    { to: '/vehicles', label: 'Vehicles', icon: Truck, roles: ['FLEET_MANAGER', 'SAFETY_OFFICER'] },
+    { to: '/drivers', label: 'Drivers', icon: Users, roles: ['FLEET_MANAGER', 'SAFETY_OFFICER'] },
   ]},
   { section: 'OPERATIONS', items: [
-    { to: '/trips', label: 'Trips', icon: MapPin },
-    { to: '/maintenance', label: 'Maintenance', icon: Wrench },
-    { to: '/fuel', label: 'Fuel Logs', icon: Fuel },
-    { to: '/expenses', label: 'Expenses', icon: Receipt },
+    { to: '/trips', label: 'Trips', icon: MapPin, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER'] },
+    { to: '/maintenance', label: 'Maintenance', icon: Wrench, roles: ['FLEET_MANAGER'] },
+    { to: '/fuel', label: 'Fuel Logs', icon: Fuel, roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'] },
+    { to: '/expenses', label: 'Expenses', icon: Receipt, roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'] },
   ]},
   { section: 'ANALYTICS', items: [
-    { to: '/reports', label: 'Reports', icon: BarChart2 },
+    { to: '/reports', label: 'Reports', icon: BarChart2, roles: ['FLEET_MANAGER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
   ]},
 ];
 
@@ -36,6 +36,13 @@ export default function Sidebar() {
   };
 
   const initials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
+
+  // Filter sections and items based on user role
+  const userRole = user?.role || 'DRIVER';
+  const filteredNavItems = navItems.map(section => {
+    const items = section.items.filter(item => item.roles.includes(userRole));
+    return { ...section, items };
+  }).filter(section => section.items.length > 0);
 
   return (
     <aside className="sidebar">
@@ -52,7 +59,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        {navItems.map(section => (
+        {filteredNavItems.map(section => (
           <div key={section.section}>
             <div className="sidebar-section-label">{section.section}</div>
             {section.items.map(item => (
