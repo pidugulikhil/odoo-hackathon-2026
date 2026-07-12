@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Shield, Truck, BarChart2, Fuel, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 const FEATURES = [
   { icon: BarChart2, label: 'Real-time Analytics' },
@@ -30,6 +32,33 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleGoogleRegister = async () => {
+    if (!agree) {
+      toast.error('You must agree to the Terms of Service and Privacy Policy');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await apiClient.post('/auth/google', { token: idToken, role: role });
+      const { token, user: userData } = res.data.data;
+      
+      localStorage.setItem('transitops_token', token);
+      localStorage.setItem('transitops_user', JSON.stringify(userData));
+      
+      toast.success('Signed up with Google successfully!');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.error?.message || 'Google Sign-Up failed or cancelled.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -370,12 +399,15 @@ export default function RegisterPage() {
 
             {/* Social Logins */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+              {/* Social Login Button */}
               <button
                 type="button"
+                onClick={handleGoogleRegister}
+                disabled={loading}
                 style={{
                   height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, color: '#334155', transition: 'all 0.2s'
+                  border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 600, color: '#334155', transition: 'all 0.2s', width: '100%'
                 }}
                 onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
                 onMouseOut={e => e.currentTarget.style.background = '#fff'}

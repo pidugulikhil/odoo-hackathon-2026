@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Truck, BarChart2, Shield, Fuel, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
+import apiClient from '../api/client';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 const DEMO_ACCOUNTS = [
   { label: 'Fleet Manager', email: 'fleet@transitops.com', color: '#10b981' },
@@ -25,6 +28,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await apiClient.post('/auth/google', { token: idToken });
+      const { token, user: userData } = res.data.data;
+      
+      localStorage.setItem('transitops_token', token);
+      localStorage.setItem('transitops_user', JSON.stringify(userData));
+      
+      toast.success('Signed in with Google successfully!');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.error?.message || 'Google Sign-In failed or cancelled.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -276,11 +302,14 @@ export default function LoginPage() {
           </div>
 
           {/* Social Login */}
+          {/* Social Login Button */}
           <button
             type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
             style={{
-              width: '100%', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', cursor: 'pointer',
+              width: '100%', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              border: '1.5px solid #cbd5e1', borderRadius: '8px', background: '#fff', cursor: 'pointer',
               fontSize: 13, fontWeight: 600, color: '#334155', transition: 'all 0.2s'
             }}
             onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}

@@ -82,6 +82,47 @@ const register = asyncHandler(async (req, res) => {
   return sendCreated(res, { user }, 'User registered successfully');
 });
 
+const googleLogin = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) throw ApiError.badRequest('Token is required');
+
+  let profile;
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+    profile = JSON.parse(jsonPayload);
+  } catch (err) {
+    throw ApiError.badRequest('Invalid token format');
+  }
+
+  const { email, name } = profile;
+  if (!email) throw ApiError.badRequest('Email not provided in Google profile');
+
+  let user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name: name || email.split('@')[0],
+        email: email.toLowerCase().trim(),
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        role: req.body.role || 'FLEET_MANAGER',
+      }
+    });
+  }
+
+  const jwtToken = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+
+  return sendSuccessWithMessage(res, 'Logged in with Google successfully', {
+    token: jwtToken,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role }
+  });
+});
+
 /**
  * GET /api/auth/me
  * Returns current authenticated user
@@ -97,4 +138,4 @@ const getMe = asyncHandler(async (req, res) => {
   return sendSuccess(res, { user });
 });
 
-module.exports = { login, register, getMe };
+module.exports = { login, register, googleLogin, getMe };
