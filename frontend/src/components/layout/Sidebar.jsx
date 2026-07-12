@@ -69,6 +69,28 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* Drive Safety Banner */}
+      <div style={{ padding: '0 14px 14px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(15, 23, 42, 0.4) 100%)',
+          border: '1px solid rgba(99, 102, 241, 0.2)',
+          borderRadius: 12, padding: 14,
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #6366f1, transparent)' }} />
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>Drive Safety. Save Lives.</h4>
+          <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.4, marginBottom: 12 }}>Monitor driver behavior and improve safety scores.</p>
+          <button onClick={() => navigate('/reports')} style={{
+            fontSize: 11, fontWeight: 600, color: '#fff',
+            background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)',
+            borderRadius: 6, padding: '5px 12px', display: 'inline-flex', alignItems: 'center', gap: 4,
+            cursor: 'pointer', transition: 'all 0.2s ease'
+          }}>
+            View Insights →
+          </button>
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="sidebar-footer">
         {user && (
