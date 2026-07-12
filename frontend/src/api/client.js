@@ -19,7 +19,13 @@ apiClient.interceptors.request.use((config) => {
 
 // Response interceptor — normalize responses, auto-redirect on 401
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config?.method?.toLowerCase();
+    if (['post', 'put', 'delete'].includes(method)) {
+      window.dispatchEvent(new CustomEvent('activity-updated'));
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('transitops_token');

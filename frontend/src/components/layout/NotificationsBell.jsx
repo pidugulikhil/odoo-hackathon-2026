@@ -44,9 +44,16 @@ export default function NotificationsBell() {
 
   useEffect(() => {
     fetchActivities();
-    // Poll for new notifications every 60 seconds
-    const interval = setInterval(fetchActivities, 60000);
-    return () => clearInterval(interval);
+    // Poll for new notifications every 5 seconds (real-time updates)
+    const interval = setInterval(fetchActivities, 5000);
+
+    // Instant real-time listener for current user actions
+    window.addEventListener('activity-updated', fetchActivities);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('activity-updated', fetchActivities);
+    };
   }, []);
 
   // Handle clicking outside to close the dropdown
