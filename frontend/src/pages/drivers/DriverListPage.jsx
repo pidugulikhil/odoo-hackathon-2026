@@ -11,6 +11,7 @@ import {
   UserX, Truck, MoreVertical
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import NotificationsBell from '../../components/layout/NotificationsBell';
 
 const STATUSES = ['', 'AVAILABLE', 'ON_TRIP', 'OFF_DUTY', 'SUSPENDED'];
 const CATEGORIES = ['', 'HGV', 'LMV', 'HTV', 'PSV', 'MCWG'];
@@ -205,18 +206,7 @@ export default function DriverListPage() {
         </div>
         <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Notification Bell */}
-          <div style={{ position: 'relative', cursor: 'pointer', padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--surface-border)' }}>
-            <Bell size={16} color="#94a3b8" />
-            <span style={{
-              position: 'absolute', top: 5, right: 5,
-              width: 14, height: 14, borderRadius: '50%',
-              background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 0 2px var(--surface-bg)'
-            }}>
-              3
-            </span>
-          </div>
+          <NotificationsBell />
 
           <button id="add-driver-btn" className="btn btn-primary btn-sm" onClick={() => navigate('/drivers/new')} style={{ height: 38 }}>
             <Plus size={14} /> Add Driver
