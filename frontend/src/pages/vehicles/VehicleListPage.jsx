@@ -11,6 +11,7 @@ import {
   Activity, MoreVertical
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import NotificationsBell from '../../components/layout/NotificationsBell';
 
 const VEHICLE_STATUSES = ['', 'AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED'];
 const VEHICLE_TYPES = ['', 'TRUCK', 'VAN', 'BUS', 'MINI_TRUCK', 'TRAILER', 'OTHER'];
@@ -259,18 +260,7 @@ export default function VehicleListPage() {
         </div>
         <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Notification Icons */}
-          <div style={{ position: 'relative', cursor: 'pointer', padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--surface-border)' }}>
-            <Bell size={16} color="#94a3b8" />
-            <span style={{
-              position: 'absolute', top: 5, right: 5,
-              width: 14, height: 14, borderRadius: '50%',
-              background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 0 2px var(--surface-bg)'
-            }}>
-              3
-            </span>
-          </div>
+          <NotificationsBell />
           <div style={{ cursor: 'pointer', padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--surface-border)' }}>
             <Settings size={16} color="#94a3b8" />
           </div>
