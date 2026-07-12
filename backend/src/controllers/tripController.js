@@ -82,11 +82,50 @@ const createTrip = asyncHandler(async (req, res) => {
   if (!cargoWeight || parseFloat(cargoWeight) <= 0) throw ApiError.badRequest('Cargo weight must be greater than 0');
   if (!plannedDistance || parseFloat(plannedDistance) <= 0) throw ApiError.badRequest('Planned distance must be greater than 0');
 
-  const vehicle = await prisma.vehicle.findUnique({ where: { id: parseInt(vehicleId) } });
-  if (!vehicle) throw ApiError.notFound('Vehicle not found');
+  const parsedVehicleId = parseInt(vehicleId);
+  const parsedDriverId = parseInt(driverId);
 
-  const driver = await prisma.driver.findUnique({ where: { id: parseInt(driverId) } });
-  if (!driver) throw ApiError.notFound('Driver not found');
+  if (isNaN(parsedVehicleId)) {
+    throw ApiError.badRequest('Invalid vehicle ID');
+  }
+
+  if (isNaN(parsedDriverId)) {
+    throw ApiError.badRequest('Invalid driver ID');
+  }
+
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id: parsedVehicleId },
+  });
+
+  if (!vehicle) {
+    throw ApiError.notFound('Vehicle not found');
+  }
+
+  if (vehicle.status !== 'AVAILABLE') {
+    const vehicleReasons = {
+      ON_TRIP: 'Vehicle is already assigned to an active trip',
+      IN_SHOP: 'Vehicle is currently In Shop',
+      RETIRED: 'Vehicle is retired',
+    };
+
+    throw ApiError.resourceUnavailable(
+      vehicleReasons[vehicle.status] || `Vehicle is not available (${vehicle.status})`
+    );
+  }
+
+  const driver = await prisma.driver.findUnique({
+    where: { id: parsedDriverId },
+  });
+
+  if (!driver) {
+    throw ApiError.notFound('Driver not found');
+  }
+
+  const eligibility = checkDriverEligibility(driver);
+
+  if (!eligibility.eligible) {
+    throw ApiError.resourceUnavailable(eligibility.reason);
+  }
 
   // Cargo capacity check
   const weight = parseFloat(cargoWeight);
@@ -110,8 +149,8 @@ const createTrip = asyncHandler(async (req, res) => {
       tripNumber,
       source: source.trim(),
       destination: destination.trim(),
-      vehicleId: parseInt(vehicleId),
-      driverId: parseInt(driverId),
+      vehicleId: parsedVehicleId,
+      driverId: parsedDriverId,
       cargoWeight: weight,
       plannedDistance: parseFloat(plannedDistance),
       status: 'DRAFT',
