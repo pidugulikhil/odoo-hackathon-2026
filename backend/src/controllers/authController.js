@@ -123,6 +123,30 @@ const googleLogin = asyncHandler(async (req, res) => {
   });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw ApiError.badRequest('Current password and new password are required');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!user) throw ApiError.unauthorized('User not found');
+
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isPasswordValid) {
+    throw ApiError.invalidCredentials('Invalid current password');
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { passwordHash: newHash },
+  });
+
+  return sendSuccessWithMessage(res, 'Password changed successfully');
+});
+
 /**
  * GET /api/auth/me
  * Returns current authenticated user
@@ -138,4 +162,4 @@ const getMe = asyncHandler(async (req, res) => {
   return sendSuccess(res, { user });
 });
 
-module.exports = { login, register, googleLogin, getMe };
+module.exports = { login, register, googleLogin, getMe, changePassword };

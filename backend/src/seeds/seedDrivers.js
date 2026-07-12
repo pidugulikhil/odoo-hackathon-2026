@@ -1,7 +1,8 @@
+const bcrypt = require('bcrypt');
 const prisma = require('../prisma/client');
 
 async function seedDrivers() {
-  console.log('🌱 Seeding drivers...');
+  console.log('🌱 Seeding drivers and setting up driver login credentials...');
 
   const now = new Date();
   const future2y = new Date(now); future2y.setFullYear(future2y.getFullYear() + 2);
@@ -25,15 +26,50 @@ async function seedDrivers() {
     { name: 'Ravi Sharma', licenseNumber: 'DL-DL-012-2020', licenseCategory: 'LMV', licenseExpiryDate: future1y, contactNumber: '8012345678', email: 'ravi@example.com', safetyScore: 67, region: 'Delhi', status: 'OFF_DUTY' },
   ];
 
+  // Hash default password for driver logins
+  const passwordHash = await bcrypt.hash('password123', 10);
+
   for (const d of drivers) {
-    await prisma.driver.upsert({
+    // 1. Create/update driver profile
+    const driverRecord = await prisma.driver.upsert({
       where: { licenseNumber: d.licenseNumber },
       update: {},
       create: d,
     });
+
+    // 2. Create corresponding User login account if it doesn't exist
+    if (d.email) {
+      await prisma.user.upsert({
+        where: { email: d.email.toLowerCase().trim() },
+        update: {},
+        create: {
+          name: d.name,
+          email: d.email.toLowerCase().trim(),
+          passwordHash,
+          role: 'DRIVER',
+        },
+      });
+    }
   }
 
-  console.log(`✅ Seeded ${drivers.length} drivers`);
+  // Also ensure the default "Alex Driver" matches the generic driver email
+  await prisma.driver.upsert({
+    where: { licenseNumber: 'DL-DL-000-2023' },
+    update: {},
+    create: {
+      name: 'Alex Driver',
+      licenseNumber: 'DL-DL-000-2023',
+      licenseCategory: 'LMV',
+      licenseExpiryDate: future2y,
+      contactNumber: '9999999999',
+      email: 'driver@transitops.com',
+      safetyScore: 94,
+      region: 'Delhi',
+      status: 'AVAILABLE',
+    },
+  });
+
+  console.log(`✅ Seeded ${drivers.length + 1} drivers and linked User credentials`);
 }
 
 module.exports = { seedDrivers };

@@ -28,6 +28,7 @@ const FuelCreatePage = lazy(() => import('./pages/fuel/FuelCreatePage'));
 const ExpenseListPage = lazy(() => import('./pages/expenses/ExpenseListPage'));
 const ExpenseCreatePage = lazy(() => import('./pages/expenses/ExpenseCreatePage'));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageLoader() {
@@ -92,6 +93,9 @@ export default function App() {
 
           {/* Reports */}
           <Route path="/reports" element={<ReportsPage />} />
+
+          {/* Settings */}
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* 404 */}

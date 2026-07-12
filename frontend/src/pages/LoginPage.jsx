@@ -9,15 +9,22 @@ import { auth, googleProvider } from '../firebase';
 
 const DEMO_ACCOUNTS = [
   { label: 'Fleet Manager', email: 'fleet@transitops.com', color: '#10b981' },
-  { label: 'Driver (Alex)', email: 'driver@transitops.com', color: '#3b82f6' },
   { label: 'Safety Officer', email: 'safety@transitops.com', color: '#f59e0b' },
   { label: 'Analyst', email: 'finance@transitops.com', color: '#8b5cf6' },
-  { label: 'Likhil (Manager)', email: 'pidugulikhil@gmail.com', color: '#10b981' },
-  { label: 'Manoj (Manager)', email: 'jagarapumanojkumar@gmail.com', color: '#10b981' },
-  { label: 'Hemanth (Manager)', email: 'cyberattackerhemanth@gmail.com', color: '#10b981' },
-  { label: 'Varif (Manager)', email: 'varifgaming@gmail.com', color: '#10b981' },
-  { label: 'Varif (Driver)', email: 'varifgamingarmy@gmail.com', color: '#3b82f6' },
-  { label: 'Varif (Safety)', email: 'varif@gmail.com', color: '#f59e0b' },
+];
+
+const DEMO_DRIVERS = [
+  { name: 'Alex Driver (Default)', email: 'driver@transitops.com' },
+  { name: 'Ravi Sharma (Safety: 67)', email: 'ravi@example.com' },
+  { name: 'Manoj Tiwari (Safety: 91)', email: 'manoj@example.com' },
+  { name: 'Anil Gupta (Safety: 98)', email: 'anil@example.com' },
+  { name: 'Dinesh Chauhan (Suspended)', email: 'dinesh@example.com' },
+  { name: 'Ramesh Yadav (Safety: 80)', email: 'ramesh@example.com' },
+  { name: 'Ajay Mishra (Safety: 72)', email: 'ajay@example.com' },
+  { name: 'Santosh Verma (Safety: 85)', email: 'santosh@example.com' },
+  { name: 'Vikram Rao (Safety: 96)', email: 'vikram@example.com' },
+  { name: 'Mohan Das (Safety: 78)', email: 'mohan@example.com' },
+  { name: 'Pradeep Singh (Safety: 92)', email: 'pradeep@example.com' },
 ];
 
 const FEATURES = [
@@ -276,29 +283,23 @@ export default function LoginPage() {
           </div>
 
           {/* Demo Accounts */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 8,
-            maxHeight: 155,
-            overflowY: 'auto',
-            paddingRight: 4,
-            marginBottom: 4
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
             {DEMO_ACCOUNTS.map(acc => (
               <button
                 key={acc.email}
+                type="button"
                 onClick={() => fillDemo(acc.email)}
                 style={{
-                  padding: '9px 12px',
+                  padding: '9px 6px',
                   border: `1.5px solid ${acc.color}22`,
                   borderRadius: 8,
                   background: `${acc.color}0d`,
                   color: acc.color,
-                  fontSize: 12,
-                  fontWeight: 600,
+                  fontSize: 11,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  textAlign: 'center',
                 }}
                 onMouseOver={e => { e.currentTarget.style.background = `${acc.color}22`; }}
                 onMouseOut={e => { e.currentTarget.style.background = `${acc.color}0d`; }}
@@ -306,6 +307,27 @@ export default function LoginPage() {
                 {acc.label}
               </button>
             ))}
+          </div>
+
+          {/* Demo Driver Dropdown Selector */}
+          <div style={{ marginTop: 10, width: '100%' }}>
+            <select
+              onChange={(e) => {
+                if (e.target.value) fillDemo(e.target.value);
+              }}
+              defaultValue=""
+              style={{
+                width: '100%', padding: '9px 12px',
+                border: '1.5px solid #cbd5e1', borderRadius: 8,
+                fontSize: 12, color: '#334155', background: '#f8fafc',
+                cursor: 'pointer', fontWeight: 600, boxSizing: 'border-box'
+              }}
+            >
+              <option value="" disabled>Or login as a specific driver...</option>
+              {DEMO_DRIVERS.map(d => (
+                <option key={d.email} value={d.email}>{d.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Divider */}

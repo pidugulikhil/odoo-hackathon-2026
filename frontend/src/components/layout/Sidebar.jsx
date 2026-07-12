@@ -2,13 +2,14 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   Truck, Users, MapPin, Wrench, Fuel, Receipt, BarChart2,
-  LayoutDashboard, LogOut, Activity
+  LayoutDashboard, LogOut, Activity, Settings
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const navItems = [
   { section: 'OVERVIEW', items: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
+    { to: '/settings', label: 'Settings', icon: Settings, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
   ]},
   { section: 'FLEET', items: [
     { to: '/vehicles', label: 'Vehicles', icon: Truck, roles: ['FLEET_MANAGER', 'SAFETY_OFFICER'] },

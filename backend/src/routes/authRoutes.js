@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, register, googleLogin, getMe } = require('../controllers/authController');
+const { login, register, googleLogin, getMe, changePassword } = require('../controllers/authController');
 const { authenticate } = require('../middleware/authMiddleware');
 
 // POST /api/auth/login
@@ -14,5 +14,8 @@ router.post('/google', googleLogin);
 
 // GET /api/auth/me
 router.get('/me', authenticate, getMe);
+
+// POST /api/auth/change-password
+router.post('/change-password', authenticate, changePassword);
 
 module.exports = router;
