@@ -18,6 +18,7 @@ const DriverEditPage = lazy(() => import('./pages/drivers/DriverEditPage'));
 const DriverDetailPage = lazy(() => import('./pages/drivers/DriverDetailPage'));
 const TripListPage = lazy(() => import('./pages/trips/TripListPage'));
 const TripCreatePage = lazy(() => import('./pages/trips/TripCreatePage'));
+const TripEditPage = lazy(() => import('./pages/trips/TripEditPage'));
 const TripDetailPage = lazy(() => import('./pages/trips/TripDetailPage'));
 const MaintenanceListPage = lazy(() => import('./pages/maintenance/MaintenanceListPage'));
 const MaintenanceCreatePage = lazy(() => import('./pages/maintenance/MaintenanceCreatePage'));
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/trips" element={<TripListPage />} />
           <Route path="/trips/new" element={<TripCreatePage />} />
           <Route path="/trips/:id" element={<TripDetailPage />} />
+          <Route path="/trips/:id/edit" element={<TripEditPage />} />
 
           {/* Maintenance */}
           <Route path="/maintenance" element={<MaintenanceListPage />} />
