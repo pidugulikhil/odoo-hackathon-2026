@@ -21,21 +21,35 @@ const getDashboard = asyncHandler(async (req, res) => {
   // Vehicle filters
   const vehicleWhere = {};
   if (type) vehicleWhere.type = type;
+  if (status) vehicleWhere.status = status;
   if (region) vehicleWhere.region = { contains: region, mode: 'insensitive' };
 
-  const [vehicles, drivers, trips, maintenance, fuelAgg, maintenanceAgg] = await Promise.all([
+  const [vehicles, drivers] = await Promise.all([
     prisma.vehicle.findMany({ where: vehicleWhere }),
     prisma.driver.findMany(),
-    prisma.trip.findMany(),
-    prisma.maintenance.findMany(),
-    prisma.fuelLog.aggregate({ _sum: { cost: true } }),
-    prisma.maintenance.aggregate({ _sum: { cost: true } }),
+  ]);
+
+  const vehicleIds = vehicles.map(v => v.id);
+
+  // Scoped queries for children records matching the filtered vehicles
+  const tripWhere = { vehicleId: { in: vehicleIds } };
+  const maintenanceWhere = { vehicleId: { in: vehicleIds } };
+  const fuelWhere = { vehicleId: { in: vehicleIds } };
+  const expenseWhere = { vehicleId: { in: vehicleIds } };
+
+  const [trips, maintenance, fuelAgg, maintenanceAgg, expenseAgg] = await Promise.all([
+    prisma.trip.findMany({ where: tripWhere }),
+    prisma.maintenance.findMany({ where: maintenanceWhere }),
+    prisma.fuelLog.aggregate({ where: fuelWhere, _sum: { cost: true } }),
+    prisma.maintenance.aggregate({ where: { ...maintenanceWhere, status: 'COMPLETED' }, _sum: { cost: true } }),
+    prisma.expense.aggregate({ where: expenseWhere, _sum: { amount: true } }),
   ]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   // Vehicle stats
+  const totalVehicles = vehicles.length;
   const activeVehicles = vehicles.filter(v => v.status !== 'RETIRED').length;
   const availableVehicles = vehicles.filter(v => v.status === 'AVAILABLE').length;
   const onTripVehicles = vehicles.filter(v => v.status === 'ON_TRIP').length;
@@ -65,11 +79,12 @@ const getDashboard = asyncHandler(async (req, res) => {
   const totalFuelCost = fuelAgg._sum.cost || 0;
   const totalMaintenanceCost = maintenanceAgg._sum.cost || 0;
   const operationalCost = totalFuelCost + totalMaintenanceCost;
+  const otherExpensesCost = expenseAgg._sum.amount || 0;
+  const totalFleetCost = operationalCost + otherExpensesCost;
   const totalRevenue = trips.filter(t => t.status === 'COMPLETED').reduce((sum, t) => sum + (t.revenue || 0), 0);
 
   return sendSuccess(res, {
     kpis: {
-      // Required KPIs
       activeVehicles,
       availableVehicles,
       vehiclesInMaintenance: inShopVehicles,
@@ -77,8 +92,7 @@ const getDashboard = asyncHandler(async (req, res) => {
       pendingTrips,
       driversOnDuty: onTripDrivers,
       fleetUtilization: parseFloat(fleetUtilization.toFixed(2)),
-      // Extra useful data
-      totalVehicles: vehicles.length,
+      totalVehicles,
       totalDrivers: drivers.length,
       availableDrivers,
       suspendedDrivers,
@@ -88,7 +102,8 @@ const getDashboard = asyncHandler(async (req, res) => {
       totalMaintenanceCost,
       operationalCost,
       totalRevenue,
-      profitMargin: totalRevenue > 0 ? ((totalRevenue - operationalCost) / totalRevenue) * 100 : 0,
+      totalFleetCost,
+      profitMargin: totalRevenue > 0 ? ((totalRevenue - totalFleetCost) / totalRevenue) * 100 : 0,
     },
   });
 });
@@ -289,12 +304,12 @@ const getActivity = asyncHandler(async (req, res) => {
       include: { vehicle: { select: { name: true, registrationNumber: true } } },
     }),
     prisma.fuelLog.findMany({
-      take: 5,
+      take: 10,
       orderBy: { createdAt: 'desc' },
       include: { vehicle: { select: { name: true, registrationNumber: true } } },
     }),
     prisma.expense.findMany({
-      take: 5,
+      take: 10,
       orderBy: { createdAt: 'desc' },
       include: { vehicle: { select: { name: true, registrationNumber: true } } },
     }),
@@ -303,10 +318,12 @@ const getActivity = asyncHandler(async (req, res) => {
   const activities = [];
 
   recentTrips.forEach(t => {
-    let action = 'created';
-    if (t.status === 'DISPATCHED') action = 'dispatched';
-    if (t.status === 'COMPLETED') action = 'completed';
-    if (t.status === 'CANCELLED') action = 'cancelled';
+    let action = '';
+    if (t.status === 'DISPATCHED') action = 'Dispatched';
+    else if (t.status === 'COMPLETED') action = 'Completed';
+    else if (t.status === 'CANCELLED') action = 'Cancelled';
+    else return;
+
     activities.push({
       type: 'TRIP',
       icon: 'truck',
@@ -318,14 +335,16 @@ const getActivity = asyncHandler(async (req, res) => {
   });
 
   recentMaintenance.forEach(m => {
-    let action = 'created';
-    if (m.status === 'ACTIVE') action = 'activated';
-    if (m.status === 'COMPLETED') action = 'completed';
+    let action = '';
+    if (m.status === 'ACTIVE') action = 'Started';
+    else if (m.status === 'COMPLETED') action = 'Completed';
+    else return;
+
     activities.push({
       type: 'MAINTENANCE',
       icon: 'wrench',
-      message: `Vehicle ${m.vehicle.registrationNumber} entered maintenance`,
-      detail: `${m.type}: ${m.description}`,
+      message: `Maintenance ${action}`,
+      detail: `${m.maintenanceNumber} for ${m.vehicle.name} (${m.vehicle.registrationNumber}) | ${m.type}`,
       timestamp: m.updatedAt,
       status: m.status,
     });
@@ -335,8 +354,8 @@ const getActivity = asyncHandler(async (req, res) => {
     activities.push({
       type: 'FUEL',
       icon: 'fuel',
-      message: `Fuel log added for ${f.vehicle.registrationNumber}`,
-      detail: `${f.liters}L at ₹${f.cost}`,
+      message: `Fuel Added`,
+      detail: `${f.liters}L logged for ${f.vehicle.name} (${f.vehicle.registrationNumber}) | Cost: ₹${f.cost}`,
       timestamp: f.createdAt,
     });
   });
@@ -345,8 +364,8 @@ const getActivity = asyncHandler(async (req, res) => {
     activities.push({
       type: 'EXPENSE',
       icon: 'receipt',
-      message: `Expense added for ${e.vehicle.registrationNumber}`,
-      detail: `${e.type}: ₹${e.amount}`,
+      message: `Expense Added`,
+      detail: `${e.type}: ₹${e.amount} for ${e.vehicle.name} (${e.vehicle.registrationNumber})`,
       timestamp: e.createdAt,
     });
   });
@@ -357,6 +376,118 @@ const getActivity = asyncHandler(async (req, res) => {
   return sendSuccess(res, { activities: activities.slice(0, limit) });
 });
 
+// ─── CSV Export Helpers & Actions ─────────────────────────────────────────────
+
+const generateCSVResponse = (res, filename, headers, rows) => {
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.send(csv);
+};
+
+/**
+ * GET /api/analytics/fuel-efficiency/export
+ */
+const exportFuelEfficiency = asyncHandler(async (req, res) => {
+  const vehicles = await prisma.vehicle.findMany({
+    include: {
+      trips: {
+        where: { status: 'COMPLETED', fuelConsumed: { gt: 0 } },
+        select: { actualDistance: true, fuelConsumed: true },
+      },
+    },
+  });
+
+  const headers = ['Vehicle ID', 'Name', 'Registration Number', 'Type', 'Region', 'Total Distance (km)', 'Total Fuel Consumed (L)', 'Fuel Efficiency (km/L)', 'Completed Trips'];
+  const rows = vehicles.map(v => {
+    const totalDistance = v.trips.reduce((s, t) => s + (t.actualDistance || 0), 0);
+    const totalFuel = v.trips.reduce((s, t) => s + (t.fuelConsumed || 0), 0);
+    const efficiency = totalFuel > 0 ? totalDistance / totalFuel : null;
+    return [
+      v.id, v.name, v.registrationNumber, v.type, v.region,
+      totalDistance, totalFuel, efficiency ? parseFloat(efficiency.toFixed(2)) : '—',
+      v.trips.length
+    ];
+  });
+
+  return generateCSVResponse(res, 'fuel_efficiency_report.csv', headers, rows);
+});
+
+/**
+ * GET /api/analytics/fleet-utilization/export
+ */
+const exportFleetUtilization = asyncHandler(async (req, res) => {
+  const vehicles = await prisma.vehicle.findMany();
+  const headers = ['Vehicle ID', 'Name', 'Registration Number', 'Type', 'Status', 'Region'];
+  const rows = vehicles.map(v => [
+    v.id, v.name, v.registrationNumber, v.type, v.status, v.region
+  ]);
+
+  return generateCSVResponse(res, 'fleet_utilization_report.csv', headers, rows);
+});
+
+/**
+ * GET /api/analytics/operational-cost/export
+ */
+const exportOperationalCost = asyncHandler(async (req, res) => {
+  const vehicles = await prisma.vehicle.findMany({
+    include: {
+      fuelLogs: { select: { cost: true } },
+      maintenance: { where: { status: 'COMPLETED' }, select: { cost: true } },
+      expenses: { select: { amount: true } },
+    },
+  });
+
+  const headers = ['Vehicle ID', 'Name', 'Registration Number', 'Type', 'Region', 'Fuel Cost (₹)', 'Maintenance Cost (₹)', 'Other Expenses (₹)', 'Operational Cost (₹)', 'Total Fleet Cost (₹)'];
+  const rows = vehicles.map(v => {
+    const fuelCost = v.fuelLogs.reduce((s, f) => s + f.cost, 0);
+    const maintenanceCost = v.maintenance.reduce((s, m) => s + m.cost, 0);
+    const otherExpenses = v.expenses.reduce((s, e) => s + e.amount, 0);
+    const operationalCost = fuelCost + maintenanceCost;
+    const totalFleetCost = operationalCost + otherExpenses;
+    return [
+      v.id, v.name, v.registrationNumber, v.type, v.region,
+      fuelCost, maintenanceCost, otherExpenses, operationalCost, totalFleetCost
+    ];
+  });
+
+  return generateCSVResponse(res, 'operational_cost_report.csv', headers, rows);
+});
+
+/**
+ * GET /api/analytics/vehicle-roi/export
+ */
+const exportVehicleRoi = asyncHandler(async (req, res) => {
+  const vehicles = await prisma.vehicle.findMany({
+    include: {
+      trips: { where: { status: 'COMPLETED' }, select: { revenue: true } },
+      fuelLogs: { select: { cost: true } },
+      maintenance: { where: { status: 'COMPLETED' }, select: { cost: true } },
+    },
+  });
+
+  const headers = ['Vehicle ID', 'Name', 'Registration Number', 'Type', 'Status', 'Acquisition Cost (₹)', 'Revenue (₹)', 'Fuel Cost (₹)', 'Maintenance Cost (₹)', 'Net Profit (₹)', 'ROI %'];
+  const rows = vehicles.map(v => {
+    const revenue = v.trips.reduce((s, t) => s + (t.revenue || 0), 0);
+    const fuelCost = v.fuelLogs.reduce((s, f) => s + f.cost, 0);
+    const maintenanceCost = v.maintenance.reduce((s, m) => s + m.cost, 0);
+    const netProfit = revenue - (maintenanceCost + fuelCost);
+    let roiPercent = null;
+    if (v.acquisitionCost > 0) {
+      roiPercent = (netProfit / v.acquisitionCost) * 100;
+    }
+    return [
+      v.id, v.name, v.registrationNumber, v.type, v.status, v.acquisitionCost,
+      revenue, fuelCost, maintenanceCost, netProfit,
+      roiPercent !== null ? `${roiPercent.toFixed(2)}%` : '—'
+    ];
+  });
+
+  return generateCSVResponse(res, 'vehicle_roi_report.csv', headers, rows);
+});
+
 module.exports = {
   getDashboard,
   getFuelEfficiency,
@@ -364,4 +495,8 @@ module.exports = {
   getOperationalCost,
   getVehicleRoi,
   getActivity,
+  exportFuelEfficiency,
+  exportFleetUtilization,
+  exportOperationalCost,
+  exportVehicleRoi,
 };

@@ -4,16 +4,30 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { Truck, Fuel, Wrench, TrendingUp } from 'lucide-react';
+import { Truck, Fuel, Wrench, TrendingUp, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-function Section({ title, children }) {
+function Section({ title, onExport, exporting, children }) {
   return (
     <div style={{ marginBottom: 32 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
-        {title}
-      </h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+          {title}
+        </h2>
+        {onExport && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={onExport}
+            disabled={exporting}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <Download size={14} />
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -25,6 +39,25 @@ export default function ReportsPage() {
   const [utilization, setUtilization] = useState(null);
   const [opCost, setOpCost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exportingSec, setExportingSec] = useState({});
+
+  const handleExport = async (reportName, endpoint) => {
+    setExportingSec(prev => ({ ...prev, [reportName]: true }));
+    try {
+      const res = await apiClient.get(`/analytics/${endpoint}/export`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportName}_report.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Report exported successfully');
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setExportingSec(prev => ({ ...prev, [reportName]: false }));
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -69,7 +102,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Fleet Utilization */}
-      <Section title={<><Truck size={18} /> Fleet Utilization</>}>
+      <Section title={<><Truck size={18} /> Fleet Utilization</>} onExport={() => handleExport('fleet_utilization', 'fleet-utilization')} exporting={exportingSec.fleet_utilization}>
         <div className="content-grid">
           <div className="chart-card">
             <h3 className="chart-title">Fleet Status Distribution</h3>
@@ -103,7 +136,7 @@ export default function ReportsPage() {
       </Section>
 
       {/* Vehicle ROI */}
-      <Section title={<><TrendingUp size={18} /> Vehicle ROI Analysis</>}>
+      <Section title={<><TrendingUp size={18} /> Vehicle ROI Analysis</>} onExport={() => handleExport('vehicle_roi', 'vehicle-roi')} exporting={exportingSec.vehicle_roi}>
         <div className="chart-card">
           <h3 className="chart-title">ROI by Vehicle (%)</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -160,7 +193,7 @@ export default function ReportsPage() {
       </Section>
 
       {/* Fuel Efficiency */}
-      <Section title={<><Fuel size={18} /> Fuel Efficiency</>}>
+      <Section title={<><Fuel size={18} /> Fuel Efficiency</>} onExport={() => handleExport('fuel_efficiency', 'fuel-efficiency')} exporting={exportingSec.fuel_efficiency}>
         <div className="chart-card">
           <h3 className="chart-title">km per Liter by Vehicle</h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -176,7 +209,7 @@ export default function ReportsPage() {
       </Section>
 
       {/* Operational Cost */}
-      <Section title={<><Wrench size={18} /> Operational Cost Breakdown</>}>
+      <Section title={<><Wrench size={18} /> Operational Cost Breakdown</>} onExport={() => handleExport('operational_cost', 'operational-cost')} exporting={exportingSec.operational_cost}>
         <div className="chart-card">
           <h3 className="chart-title">Cost by Vehicle</h3>
           <ResponsiveContainer width="100%" height={280}>

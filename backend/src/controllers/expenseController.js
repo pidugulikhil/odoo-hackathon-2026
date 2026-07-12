@@ -107,4 +107,54 @@ const deleteExpense = asyncHandler(async (req, res) => {
   return sendSuccessWithMessage(res, 'Expense deleted', {});
 });
 
-module.exports = { listExpenses, createExpense, getExpense, deleteExpense };
+/**
+ * PUT /api/expenses/:id
+ */
+const updateExpense = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) throw ApiError.badRequest('Invalid ID');
+
+  const record = await prisma.expense.findUnique({ where: { id } });
+  if (!record) throw ApiError.notFound('Expense not found');
+
+  const { vehicleId, tripId, type, description, amount, date } = req.body;
+
+  const data = {};
+  if (vehicleId !== undefined) {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: parseInt(vehicleId) } });
+    if (!vehicle) throw ApiError.notFound('Vehicle not found');
+    data.vehicleId = parseInt(vehicleId);
+  }
+  if (tripId !== undefined) {
+    if (tripId) {
+      const trip = await prisma.trip.findUnique({ where: { id: parseInt(tripId) } });
+      if (!trip) throw ApiError.notFound('Trip not found');
+      data.tripId = parseInt(tripId);
+    } else {
+      data.tripId = null;
+    }
+  }
+  if (type !== undefined) {
+    if (!VALID_TYPES.includes(type)) throw ApiError.badRequest(`Expense type must be one of: ${VALID_TYPES.join(', ')}`);
+    data.type = type;
+  }
+  if (description !== undefined) data.description = description?.trim() || null;
+  if (amount !== undefined) {
+    if (parseFloat(amount) < 0) throw ApiError.badRequest('Amount cannot be negative');
+    data.amount = parseFloat(amount);
+  }
+  if (date !== undefined) data.date = new Date(date);
+
+  const updated = await prisma.expense.update({
+    where: { id },
+    data,
+    include: {
+      vehicle: { select: { id: true, name: true, registrationNumber: true } },
+      trip: { select: { id: true, tripNumber: true } },
+    },
+  });
+
+  return sendSuccessWithMessage(res, 'Expense updated successfully', { expense: updated });
+});
+
+module.exports = { listExpenses, createExpense, getExpense, deleteExpense, updateExpense };

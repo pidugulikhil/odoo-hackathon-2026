@@ -3,6 +3,10 @@ const prisma = require('../prisma/client');
 async function seedOperations() {
   console.log('🌱 Seeding operations (maintenance, fuel, expenses)...');
 
+  // Clean up existing logs to make seed idempotent
+  await prisma.fuelLog.deleteMany();
+  await prisma.expense.deleteMany();
+
   const getVehicle = async (reg) => prisma.vehicle.findUnique({ where: { registrationNumber: reg } });
   const getTrip = async (num) => prisma.trip.findUnique({ where: { tripNumber: num } });
 

@@ -68,6 +68,7 @@ const createMaintenance = asyncHandler(async (req, res) => {
 
   const vehicle = await prisma.vehicle.findUnique({ where: { id: parseInt(vehicleId) } });
   if (!vehicle) throw ApiError.notFound('Vehicle not found');
+  if (vehicle.status === 'RETIRED') throw ApiError.badRequest('Cannot create maintenance for a retired vehicle');
 
   const maintenanceNumber = await generateMaintenanceNumber();
 

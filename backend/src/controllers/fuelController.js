@@ -105,4 +105,60 @@ const deleteFuelLog = asyncHandler(async (req, res) => {
   return sendSuccessWithMessage(res, 'Fuel log deleted', {});
 });
 
-module.exports = { listFuelLogs, createFuelLog, getFuelLog, deleteFuelLog };
+/**
+ * PUT /api/fuel/:id
+ */
+const updateFuelLog = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) throw ApiError.badRequest('Invalid ID');
+
+  const log = await prisma.fuelLog.findUnique({ where: { id } });
+  if (!log) throw ApiError.notFound('Fuel log not found');
+
+  const { vehicleId, tripId, liters, cost, date, odometer } = req.body;
+
+  const data = {};
+  if (vehicleId !== undefined) {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: parseInt(vehicleId) } });
+    if (!vehicle) throw ApiError.notFound('Vehicle not found');
+    data.vehicleId = parseInt(vehicleId);
+  }
+  if (tripId !== undefined) {
+    if (tripId) {
+      const trip = await prisma.trip.findUnique({ where: { id: parseInt(tripId) } });
+      if (!trip) throw ApiError.notFound('Trip not found');
+      data.tripId = parseInt(tripId);
+    } else {
+      data.tripId = null;
+    }
+  }
+
+  const litersVal = liters !== undefined ? parseFloat(liters) : log.liters;
+  const costVal = cost !== undefined ? parseFloat(cost) : log.cost;
+
+  if (litersVal <= 0) throw ApiError.badRequest('Liters must be greater than 0');
+  if (costVal < 0) throw ApiError.badRequest('Cost cannot be negative');
+
+  data.liters = litersVal;
+  data.cost = costVal;
+  data.pricePerLiter = litersVal > 0 ? costVal / litersVal : null;
+
+  if (date !== undefined) data.date = new Date(date);
+  if (odometer !== undefined) {
+    if (parseFloat(odometer) < 0) throw ApiError.badRequest('Odometer cannot be negative');
+    data.odometer = parseFloat(odometer);
+  }
+
+  const updated = await prisma.fuelLog.update({
+    where: { id },
+    data,
+    include: {
+      vehicle: { select: { id: true, name: true, registrationNumber: true } },
+      trip: { select: { id: true, tripNumber: true } },
+    },
+  });
+
+  return sendSuccessWithMessage(res, 'Fuel log updated successfully', { fuelLog: updated });
+});
+
+module.exports = { listFuelLogs, createFuelLog, getFuelLog, deleteFuelLog, updateFuelLog };

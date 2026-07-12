@@ -3,15 +3,21 @@ const router = express.Router();
 const {
   getDashboard, getFuelEfficiency, getFleetUtilization,
   getOperationalCost, getVehicleRoi, getActivity,
+  exportFuelEfficiency, exportFleetUtilization,
+  exportOperationalCost, exportVehicleRoi,
 } = require('../controllers/analyticsController');
 const { authenticate } = require('../middleware/authMiddleware');
 
 router.use(authenticate);
 
 router.get('/dashboard', getDashboard);
+router.get('/fuel-efficiency/export', exportFuelEfficiency);
 router.get('/fuel-efficiency', getFuelEfficiency);
+router.get('/fleet-utilization/export', exportFleetUtilization);
 router.get('/fleet-utilization', getFleetUtilization);
+router.get('/operational-cost/export', exportOperationalCost);
 router.get('/operational-cost', getOperationalCost);
+router.get('/vehicle-roi/export', exportVehicleRoi);
 router.get('/vehicle-roi', getVehicleRoi);
 router.get('/activity', getActivity);
 
