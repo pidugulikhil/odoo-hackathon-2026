@@ -9,9 +9,15 @@ import { auth, googleProvider } from '../firebase';
 
 const DEMO_ACCOUNTS = [
   { label: 'Fleet Manager', email: 'fleet@transitops.com', color: '#10b981' },
-  { label: 'Driver', email: 'driver@transitops.com', color: '#3b82f6' },
+  { label: 'Driver (Alex)', email: 'driver@transitops.com', color: '#3b82f6' },
   { label: 'Safety Officer', email: 'safety@transitops.com', color: '#f59e0b' },
   { label: 'Analyst', email: 'finance@transitops.com', color: '#8b5cf6' },
+  { label: 'Likhil (Manager)', email: 'pidugulikhil@gmail.com', color: '#10b981' },
+  { label: 'Manoj (Manager)', email: 'jagarapumanojkumar@gmail.com', color: '#10b981' },
+  { label: 'Hemanth (Manager)', email: 'cyberattackerhemanth@gmail.com', color: '#10b981' },
+  { label: 'Varif (Manager)', email: 'varifgaming@gmail.com', color: '#10b981' },
+  { label: 'Varif (Driver)', email: 'varifgamingarmy@gmail.com', color: '#3b82f6' },
+  { label: 'Varif (Safety)', email: 'varif@gmail.com', color: '#f59e0b' },
 ];
 
 const FEATURES = [
@@ -270,7 +276,15 @@ export default function LoginPage() {
           </div>
 
           {/* Demo Accounts */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8,
+            maxHeight: 155,
+            overflowY: 'auto',
+            paddingRight: 4,
+            marginBottom: 4
+          }}>
             {DEMO_ACCOUNTS.map(acc => (
               <button
                 key={acc.email}
