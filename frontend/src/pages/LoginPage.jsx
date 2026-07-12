@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Truck, BarChart2, Shield, Fuel, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -272,7 +272,9 @@ export default function LoginPage() {
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <p style={{ fontSize: 12, color: '#9ca3af' }}>
               Don't have an account?{' '}
-              <span style={{ color: '#10b981', fontWeight: 600 }}>Contact your administrator</span>
+              <Link to="/register" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>
+                Register here
+              </Link>
             </p>
           </div>
         </div>

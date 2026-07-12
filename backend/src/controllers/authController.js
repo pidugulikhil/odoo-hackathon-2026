@@ -44,6 +44,44 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
+const register = asyncHandler(async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password || !role) {
+    throw ApiError.badRequest('All fields (name, email, password, role) are required');
+  }
+
+  const allowedRoles = ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'];
+  if (!allowedRoles.includes(role)) {
+    throw ApiError.badRequest('Invalid role specified');
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+  if (existingUser) {
+    throw ApiError.conflict('Email is already registered');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      role,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  return sendCreated(res, { user }, 'User registered successfully');
+});
+
 /**
  * GET /api/auth/me
  * Returns current authenticated user
@@ -59,4 +97,4 @@ const getMe = asyncHandler(async (req, res) => {
   return sendSuccess(res, { user });
 });
 
-module.exports = { login, getMe };
+module.exports = { login, register, getMe };
