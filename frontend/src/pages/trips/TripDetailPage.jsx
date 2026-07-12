@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 import StatusBadge from '../../components/common/StatusBadge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import { ArrowLeft, Zap, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Zap, CheckCircle, XCircle, AlertTriangle, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function Stepper({ status }) {
@@ -155,6 +155,9 @@ export default function TripDetailPage() {
         <div className="page-actions">
           {trip.status === 'DRAFT' && (
             <>
+              <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/trips/${id}/edit`)} disabled={actionLoading}>
+                <Edit size={14} /> Edit
+              </button>
               <button id="dispatch-btn" className="btn btn-primary btn-sm" onClick={handleDispatch} disabled={actionLoading}>
                 <Zap size={14} /> Dispatch
               </button>

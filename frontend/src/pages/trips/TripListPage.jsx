@@ -15,6 +15,10 @@ export default function TripListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [vehicleId, setVehicleId] = useState('');
+  const [driverId, setDriverId] = useState('');
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [page, setPage] = useState(1);
 
   const fetchTrips = useCallback(async () => {
@@ -23,14 +27,26 @@ export default function TripListPage() {
       const params = { page, limit: 15 };
       if (search) params.search = search;
       if (status) params.status = status;
+      if (vehicleId) params.vehicleId = vehicleId;
+      if (driverId) params.driverId = driverId;
       const res = await apiClient.get('/trips', { params });
       setTrips(res.data.data.trips);
       setPagination(res.data.data.pagination);
     } catch { toast.error('Failed to load trips'); }
     finally { setLoading(false); }
-  }, [page, search, status]);
+  }, [page, search, status, vehicleId, driverId]);
 
   useEffect(() => { fetchTrips(); }, [fetchTrips]);
+
+  useEffect(() => {
+    Promise.all([
+      apiClient.get('/vehicles/available'),
+      apiClient.get('/drivers/available'),
+    ]).then(([vRes, dRes]) => {
+      setVehicles(vRes.data.data.vehicles);
+      setDrivers(dRes.data.data.drivers);
+    }).catch(() => toast.error('Failed to load filter options'));
+  }, []);
 
   return (
     <div>
@@ -46,6 +62,14 @@ export default function TripListPage() {
         </div>
         <select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
           {STATUSES.map(s => <option key={s} value={s}>{s || 'All Statuses'}</option>)}
+        </select>
+        <select className="filter-select" value={vehicleId} onChange={e => { setVehicleId(e.target.value); setPage(1); }}>
+          <option value="">All Vehicles</option>
+          {vehicles.map(v => <option key={v.id} value={v.id}>{v.registrationNumber}</option>)}
+        </select>
+        <select className="filter-select" value={driverId} onChange={e => { setDriverId(e.target.value); setPage(1); }}>
+          <option value="">All Drivers</option>
+          {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </div>
 
