@@ -211,7 +211,7 @@ export default function RegisterPage() {
                     type="text"
                     required
                     className="form-control"
-                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#0f172a', background: '#fff' }}
                     placeholder="Enter your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                     type="email"
                     required
                     className="form-control"
-                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#0f172a', background: '#fff' }}
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -248,7 +248,7 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     className="form-control"
-                    style={{ paddingLeft: 42, paddingRight: 40, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    style={{ paddingLeft: 42, paddingRight: 40, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#0f172a', background: '#fff' }}
                     placeholder="Create a password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -276,7 +276,7 @@ export default function RegisterPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
                     className="form-control"
-                    style={{ paddingLeft: 42, paddingRight: 40, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    style={{ paddingLeft: 42, paddingRight: 40, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#0f172a', background: '#fff' }}
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -303,7 +303,7 @@ export default function RegisterPage() {
                 <select
                   id="register-role"
                   className="form-control"
-                  style={{ height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', paddingLeft: 12 }}
+                  style={{ height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', paddingLeft: 12, color: '#0f172a', background: '#fff' }}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                 >
@@ -321,7 +321,7 @@ export default function RegisterPage() {
                     id="register-phone"
                     type="text"
                     className="form-control"
-                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    style={{ paddingLeft: 42, height: '44px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#0f172a', background: '#fff' }}
                     placeholder="Enter your phone number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}

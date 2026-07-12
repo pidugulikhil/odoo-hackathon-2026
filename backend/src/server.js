@@ -35,4 +35,5 @@ process.on('SIGINT', async () => {
 });
 
 // Trigger nodemon restart after database config change
+// Trigger nodemon reload for register route support
 startServer();
