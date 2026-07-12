@@ -174,7 +174,11 @@ export default function DashboardPage() {
                 contentStyle={{ background: '#1a2236', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                 formatter={(val) => [`${val?.toFixed(1)}%`, 'ROI']}
               />
-              <Bar dataKey="roiPercent" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="roiPercent" radius={[4, 4, 0, 0]}>
+                {roi.map((entry, i) => (
+                  <Cell key={i} fill={entry.roiPercent >= 0 ? '#10b981' : '#ef4444'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

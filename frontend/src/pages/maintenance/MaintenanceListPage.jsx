@@ -7,7 +7,8 @@ import Pagination from '../../components/common/Pagination';
 import {
   Plus, Search, Download, Eye, Wrench, Calendar,
   Sliders, Filter, Shield, AlertTriangle, Activity,
-  MoreVertical, CheckCircle, Clock, ChevronDown, List, LayoutGrid, BarChart2, Bell
+  MoreVertical, CheckCircle, Clock, ChevronDown, List, LayoutGrid, BarChart2, Bell,
+  HelpCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
