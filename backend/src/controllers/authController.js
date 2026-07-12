@@ -106,7 +106,7 @@ const googleLogin = asyncHandler(async (req, res) => {
         name: name || email.split('@')[0],
         email: email.toLowerCase().trim(),
         passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
-        role: 'FLEET_MANAGER',
+        role: req.body.role || 'FLEET_MANAGER',
       }
     });
   }

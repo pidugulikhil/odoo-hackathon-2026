@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Shield, Truck, BarChart2, Fuel, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 const FEATURES = [
   { icon: BarChart2, label: 'Real-time Analytics' },
@@ -31,45 +33,32 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const initGoogle = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com',
-          callback: async (response) => {
-            try {
-              const res = await apiClient.post('/auth/google', { token: response.credential });
-              const { token, user: userData } = res.data.data;
-              localStorage.setItem('transitops_token', token);
-              localStorage.setItem('transitops_user', JSON.stringify(userData));
-              toast.success('Signed in with Google successfully!');
-              window.location.href = '/dashboard';
-            } catch (err) {
-              toast.error('Google login failed');
-            }
-          }
-        });
-        
-        window.google.accounts.id.renderButton(
-          document.getElementById('google-signup-btn'),
-          { theme: 'outline', size: 'large', width: 540 }
-        );
-      }
-    };
-
-    initGoogle();
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (window.google) {
-        initGoogle();
-        clearInterval(interval);
-      }
-      if (attempts > 25) clearInterval(interval);
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, []);
+  const handleGoogleRegister = async () => {
+    if (!agree) {
+      toast.error('You must agree to the Terms of Service and Privacy Policy');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await apiClient.post('/auth/google', { token: idToken, role: role });
+      const { token, user: userData } = res.data.data;
+      
+      localStorage.setItem('transitops_token', token);
+      localStorage.setItem('transitops_user', JSON.stringify(userData));
+      
+      toast.success('Signed up with Google successfully!');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.error?.message || 'Google Sign-Up failed or cancelled.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -410,8 +399,27 @@ export default function RegisterPage() {
 
             {/* Social Logins */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
-              {/* Social Login Container */}
-              <div id="google-signup-btn" style={{ display: 'flex', justifyContent: 'center', marginTop: 10, width: '100%' }}></div>
+              {/* Social Login Button */}
+              <button
+                type="button"
+                onClick={handleGoogleRegister}
+                disabled={loading}
+                style={{
+                  height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 600, color: '#334155', transition: 'all 0.2s', width: '100%'
+                }}
+                onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
+                onMouseOut={e => e.currentTarget.style.background = '#fff'}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69c-.29 1.5-.1.13-2.58 3.19l3.1 2.4c1.8-1.7 2.9-4.2 2.9-7.42z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.1-2.4c-.86.58-1.97.93-3.08.93-3.1 0-5.74-2.1-6.68-4.91l-3.2 2.5C5.8 21.1 8.6 24 12 24z" />
+                  <path fill="#FBBC05" d="M5.32 14.71a7.2 7.2 0 0 1 0-4.54l-3.2-2.5a11.9 11.9 0 0 0 0 9.54l3.2-2.5z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 8.6 0 5.8 2.9 3.8 6.71l3.2 2.5c.94-2.8 3.58-4.91 6.68-4.91z" />
+                </svg>
+                Sign up with Google
+              </button>
             </div>
 
             {/* Footer link to sign in */}
