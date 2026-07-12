@@ -34,6 +34,19 @@ const listTrips = asyncHandler(async (req, res) => {
   const { search, status, vehicleId, driverId, dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
 
   const where = {};
+  
+  if (req.user.role === 'DRIVER') {
+    const driver = await prisma.driver.findFirst({
+      where: { email: req.user.email }
+    });
+    if (!driver) {
+      return sendSuccess(res, { trips: [], pagination: paginate(page, limit, 0).meta });
+    }
+    where.driverId = driver.id;
+  } else if (driverId) {
+    where.driverId = parseInt(driverId);
+  }
+
   if (search) {
     where.OR = [
       { tripNumber: { contains: search, mode: 'insensitive' } },
@@ -43,7 +56,6 @@ const listTrips = asyncHandler(async (req, res) => {
   }
   if (status && VALID_STATUSES.includes(status)) where.status = status;
   if (vehicleId) where.vehicleId = parseInt(vehicleId);
-  if (driverId) where.driverId = parseInt(driverId);
   if (dateFrom || dateTo) {
     where.createdAt = {};
     if (dateFrom) where.createdAt.gte = new Date(dateFrom);
@@ -182,6 +194,17 @@ const getTrip = asyncHandler(async (req, res) => {
   });
 
   if (!trip) throw ApiError.notFound(`Trip with ID ${id} not found`);
+
+  // Enforce DRIVER role restriction
+  if (req.user.role === 'DRIVER') {
+    const driver = await prisma.driver.findFirst({
+      where: { email: req.user.email }
+    });
+    if (!driver || trip.driverId !== driver.id) {
+      throw ApiError.forbidden('Access denied: you can only view your own assigned trips.');
+    }
+  }
+
   return sendSuccess(res, { trip });
 });
 

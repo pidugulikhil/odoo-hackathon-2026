@@ -1,71 +1,114 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
+import { useNavigate } from 'react-router-dom';
 import {
   Truck, Users, MapPin, Wrench, TrendingUp, Activity,
-  BarChart2, Zap, AlertTriangle, CheckCircle, Clock, Fuel
+  BarChart2, Zap, AlertTriangle, CheckCircle, Clock, Fuel, Award
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import StatusBadge from '../components/common/StatusBadge';
+import toast from 'react-hot-toast';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#6b7280'];
 
 function KpiCard({ icon: Icon, label, value, color = '#10b981', subtitle }) {
   return (
-    <div className="kpi-card">
+    <div className="kpi-card" style={{ flex: '1 1 180px', minWidth: 160 }}>
       <div className="kpi-icon" style={{ background: `${color}18` }}>
         <Icon size={20} color={color} />
       </div>
-      <div className="kpi-value" style={{ color }}>{value ?? '—'}</div>
-      <div className="kpi-label">{label}</div>
-      {subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{subtitle}</div>}
+      <div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: '#f1f5f9', marginBottom: 2 }}>
+          {value != null ? value : '—'}
+        </div>
+        {subtitle && (
+          <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 function ActivityItem({ item }) {
-  const iconMap = { TRIP: MapPin, MAINTENANCE: Wrench, FUEL: Fuel, EXPENSE: BarChart2 };
-  const colorMap = { TRIP: '#3b82f6', MAINTENANCE: '#f59e0b', FUEL: '#10b981', EXPENSE: '#8b5cf6' };
-  const Icon = iconMap[item.type] || Activity;
-  const color = colorMap[item.type] || '#94a3b8';
+  const getIcon = () => {
+    switch (item.icon) {
+      case 'truck': return <Truck size={14} color="#3b82f6" />;
+      case 'wrench': return <Wrench size={14} color="#f59e0b" />;
+      case 'fuel': return <Fuel size={14} color="#10b981" />;
+      default: return <Activity size={14} color="var(--primary)" />;
+    }
+  };
+
+  const getBg = () => {
+    switch (item.icon) {
+      case 'truck': return 'rgba(59, 130, 246, 0.08)';
+      case 'wrench': return 'rgba(245, 158, 11, 0.08)';
+      case 'fuel': return 'rgba(16, 185, 129, 0.08)';
+      default: return 'rgba(99, 102, 241, 0.08)';
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--surface-border)' }}>
-      <div style={{ width: 34, height: 34, background: `${color}18`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon size={15} color={color} />
+    <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <div style={{
+        width: 26, height: 26, borderRadius: '50%',
+        background: getBg(), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+      }}>
+        {getIcon()}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 2 }}>{item.message}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.detail}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>{item.message}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }} className="truncate">{item.detail}</div>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: 2 }}>
-        {new Date(item.timestamp).toLocaleDateString()}
-      </div>
+      <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+        {new Date(item.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+      </span>
     </div>
   );
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [kpis, setKpis] = useState(null);
   const [activities, setActivities] = useState([]);
   const [roi, setRoi] = useState([]);
+  const [driverTrips, setDriverTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isDriver = user?.role === 'DRIVER';
 
   useEffect(() => {
     async function load() {
       try {
-        const [dashRes, actRes, roiRes] = await Promise.all([
-          apiClient.get('/analytics/dashboard'),
-          apiClient.get('/analytics/activity'),
-          apiClient.get('/analytics/vehicle-roi'),
-        ]);
-        setKpis(dashRes.data.data.kpis);
-        setActivities(actRes.data.data.activities);
-        setRoi(roiRes.data.data.vehicles.slice(0, 6));
+        if (isDriver) {
+          const [dashRes, actRes, tripsRes] = await Promise.all([
+            apiClient.get('/analytics/dashboard'),
+            apiClient.get('/analytics/activity'),
+            apiClient.get('/trips', { params: { limit: 5 } }),
+          ]);
+          setKpis(dashRes.data.data.kpis);
+          setActivities(actRes.data.data.activities);
+          setDriverTrips(tripsRes.data.data.trips);
+        } else {
+          const [dashRes, actRes, roiRes] = await Promise.all([
+            apiClient.get('/analytics/dashboard'),
+            apiClient.get('/analytics/activity'),
+            apiClient.get('/analytics/vehicle-roi'),
+          ]);
+          setKpis(dashRes.data.data.kpis);
+          setActivities(actRes.data.data.activities);
+          setRoi(roiRes.data.data.vehicles.slice(0, 6));
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -73,9 +116,9 @@ export default function DashboardPage() {
       }
     }
     load();
-  }, []);
+  }, [isDriver]);
 
-  const vehicleStatusData = kpis ? [
+  const vehicleStatusData = kpis && !isDriver ? [
     { name: 'Available', value: kpis.availableVehicles, color: '#10b981' },
     { name: 'On Trip', value: kpis.activeTrips, color: '#3b82f6' },
     { name: 'In Shop', value: kpis.vehiclesInMaintenance, color: '#f59e0b' },
@@ -92,7 +135,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="kpi-grid">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="kpi-card">
               <div className="skeleton" style={{ width: 44, height: 44, marginBottom: 16 }} />
               <div className="skeleton" style={{ width: 80, height: 36, marginBottom: 8 }} />
@@ -104,6 +147,100 @@ export default function DashboardPage() {
     );
   }
 
+  /* ─── Render Driver Specific Dashboard ─── */
+  if (isDriver) {
+    const safetyColor = kpis?.safetyScore >= 90 ? '#10b981' : kpis?.safetyScore >= 75 ? '#f59e0b' : '#ef4444';
+    const licenseColor = kpis?.licenseStatus === 'VALID' ? '#10b981' : kpis?.licenseStatus === 'EXPIRING_SOON' ? '#f59e0b' : '#ef4444';
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Driver Portal</h1>
+            <p className="page-subtitle">
+              Welcome back, <strong style={{ color: 'var(--primary)' }}>{user?.name}</strong> — {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+
+        {/* Driver Scoped KPI Grid */}
+        <div className="kpi-grid" style={{ marginBottom: 24 }}>
+          <KpiCard icon={Truck} label="Assigned Vehicle" value={kpis?.assignedVehicle} color="#3b82f6" subtitle="Current Active Trip" />
+          <KpiCard icon={Award} label="Safety Score" value={`${kpis?.safetyScore} / 100`} color={safetyColor} subtitle="Compliance Rating" />
+          <KpiCard icon={Zap} label="License Status" value={kpis?.licenseStatus} color={licenseColor} subtitle="RTO Validation" />
+          <KpiCard icon={MapPin} label="Total Trips" value={kpis?.totalTrips} color="#8b5cf6" subtitle={`${kpis?.completedTrips} Completed`} />
+          <KpiCard icon={Clock} label="Active Trips" value={kpis?.activeTrips} color="#f59e0b" subtitle={`${kpis?.pendingTrips} Drafts`} />
+        </div>
+
+        {/* Content Layout Split */}
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* Left: Driver Assigned Trips List */}
+          <div className="card" style={{ flex: '1 1 65%', minWidth: 500, padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Your Assigned Trips</h3>
+              <span onClick={() => navigate('/trips')} style={{ fontSize: 11, color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}>View All</span>
+            </div>
+            {driverTrips.length === 0 ? (
+              <div className="empty-state" style={{ padding: '40px 20px' }}>
+                <MapPin size={32} style={{ opacity: 0.3, marginBottom: 12 }} />
+                <p>No trips assigned to you yet.</p>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Trip #</th>
+                      <th>Route</th>
+                      <th>Cargo (kg)</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {driverTrips.map(t => (
+                      <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/trips/${t.id}`)}>
+                        <td>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', fontFamily: 'monospace' }}>
+                            {t.tripNumber}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{t.source}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>→ {t.destination}</div>
+                        </td>
+                        <td>{t.cargoWeight.toLocaleString('en-IN')}</td>
+                        <td><StatusBadge status={t.status} /></td>
+                        <td>
+                          <div style={{ fontSize: 11 }}>{new Date(t.createdAt).toLocaleDateString('en-IN')}</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Driver Scoped Activities */}
+          <div className="card" style={{ flex: '1 1 30%', minWidth: 260, padding: 18 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>Your Recent Updates</h3>
+            {activities.length === 0 ? (
+              <div className="empty-state" style={{ padding: '30px 0' }}>
+                <Activity size={28} style={{ opacity: 0.3, marginBottom: 8 }} />
+                <p style={{ fontSize: 12 }}>No recent updates</p>
+              </div>
+            ) : (
+              activities.slice(0, 5).map((item, i) => <ActivityItem key={i} item={item} />)
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Render Fleet Manager / Analytics Dashboard ─── */
   return (
     <div>
       {/* Header */}

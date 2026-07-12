@@ -18,6 +18,60 @@ function safeDiv(numerator, denominator) {
 const getDashboard = asyncHandler(async (req, res) => {
   const { type, status, region } = req.query;
 
+  // Enforce DRIVER role dashboard restriction
+  if (req.user.role === 'DRIVER') {
+    const driver = await prisma.driver.findFirst({
+      where: { email: req.user.email },
+      include: {
+        trips: {
+          include: {
+            vehicle: true
+          }
+        }
+      }
+    });
+
+    if (!driver) {
+      return sendSuccess(res, {
+        kpis: {
+          role: 'DRIVER',
+          totalTrips: 0,
+          activeTrips: 0,
+          pendingTrips: 0,
+          completedTrips: 0,
+          safetyScore: 100,
+          licenseStatus: 'NOT_FOUND',
+          assignedVehicle: 'None'
+        }
+      });
+    }
+
+    const totalTrips = driver.trips.length;
+    const activeTrips = driver.trips.filter(t => t.status === 'DISPATCHED').length;
+    const pendingTrips = driver.trips.filter(t => t.status === 'DRAFT').length;
+    const completedTrips = driver.trips.filter(t => t.status === 'COMPLETED').length;
+
+    // License expiry calculation
+    const licenseStatus = getLicenseStatus(driver);
+
+    // Latest active trip's vehicle
+    const latestActiveTrip = driver.trips.find(t => t.status === 'DISPATCHED');
+    const assignedVehicle = latestActiveTrip?.vehicle?.registrationNumber || 'None';
+
+    return sendSuccess(res, {
+      kpis: {
+        role: 'DRIVER',
+        totalTrips,
+        activeTrips,
+        pendingTrips,
+        completedTrips,
+        safetyScore: driver.safetyScore,
+        licenseStatus: licenseStatus.status,
+        assignedVehicle
+      }
+    });
+  }
+
   // Vehicle filters
   const vehicleWhere = {};
   if (type) vehicleWhere.type = type;
