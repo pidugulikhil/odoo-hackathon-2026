@@ -372,6 +372,7 @@ export default function RegisterPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               <button
                 type="button"
+                onClick={() => navigate('/google-auth?mode=register')}
                 style={{
                   height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                   border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer',

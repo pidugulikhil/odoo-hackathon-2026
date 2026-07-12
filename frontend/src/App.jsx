@@ -6,6 +6,7 @@ import MainLayout from './components/layout/MainLayout';
 // Lazy load pages
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const GoogleAuthPage = lazy(() => import('./pages/GoogleAuthPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const VehicleListPage = lazy(() => import('./pages/vehicles/VehicleListPage'));
 const VehicleCreatePage = lazy(() => import('./pages/vehicles/VehicleCreatePage'));
@@ -50,6 +51,7 @@ export default function App() {
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/google-auth" element={<GoogleAuthPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* Protected routes inside layout */}

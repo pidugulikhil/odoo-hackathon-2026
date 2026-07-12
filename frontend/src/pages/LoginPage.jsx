@@ -278,6 +278,7 @@ export default function LoginPage() {
           {/* Social Login */}
           <button
             type="button"
+            onClick={() => navigate('/google-auth?mode=login')}
             style={{
               width: '100%', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', cursor: 'pointer',
