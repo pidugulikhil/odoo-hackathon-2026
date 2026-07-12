@@ -117,10 +117,10 @@ const googleLogin = asyncHandler(async (req, res) => {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
-  return sendSuccess(res, {
+  return sendSuccessWithMessage(res, 'Logged in with Google successfully', {
     token: jwtToken,
     user: { id: user.id, name: user.name, email: user.email, role: user.role }
-  }, 'Logged in with Google successfully');
+  });
 });
 
 /**
