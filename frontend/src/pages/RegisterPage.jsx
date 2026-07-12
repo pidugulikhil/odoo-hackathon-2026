@@ -369,7 +369,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Social Logins */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               <button
                 type="button"
                 style={{
@@ -386,27 +386,7 @@ export default function RegisterPage() {
                   <path fill="#FBBC05" d="M5.32 14.71a7.2 7.2 0 0 1 0-4.54l-3.2-2.5a11.9 11.9 0 0 0 0 9.54l3.2-2.5z" />
                   <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 8.6 0 5.8 2.9 3.8 6.71l3.2 2.5c.94-2.8 3.58-4.91 6.68-4.91z" />
                 </svg>
-                Google
-              </button>
-
-              <button
-                type="button"
-                style={{
-                  height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, color: '#334155', transition: 'all 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseOut={e => e.currentTarget.style.background = '#fff'}
-              >
-                {/* Microsoft grid logo */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, width: 16, height: 16 }}>
-                  <div style={{ background: '#f25022' }} />
-                  <div style={{ background: '#7fba00' }} />
-                  <div style={{ background: '#00a4ef' }} />
-                  <div style={{ background: '#ffb900' }} />
-                </div>
-                Microsoft
+                Sign up with Google
               </button>
             </div>
 

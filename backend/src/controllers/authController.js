@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../prisma/client');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
-const { sendSuccess, sendSuccessWithMessage } = require('../utils/apiResponse');
+const { sendSuccess, sendSuccessWithMessage, sendCreated } = require('../utils/apiResponse');
 
 /**
  * POST /api/auth/login
